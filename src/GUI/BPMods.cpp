@@ -15,6 +15,7 @@
 #include <Unreal/ReflectedFunction.hpp>
 
 #include <imgui.h>
+#include <Tracy.hpp>
 
 namespace RC::GUI::BPMods
 {
@@ -51,6 +52,7 @@ namespace RC::GUI::BPMods
 
     auto render() -> void
     {
+        ZoneScoped;
         static auto mod_actor_name = FName(STR("ModActor_C"), FNAME_Add);
         
         std::vector<UObject*> mod_actors{};

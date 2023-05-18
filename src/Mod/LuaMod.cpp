@@ -59,6 +59,7 @@
 #include <Unreal/Hooks.hpp>
 #pragma warning(default: 4005)
 
+#include <Tracy.hpp>
 #include <Timer/FunctionTimer.hpp>
 
 namespace RC
@@ -68,6 +69,7 @@ namespace RC
 
     auto get_mod_ref(const LuaMadeSimple::Lua& lua) -> LuaMod*
     {
+        ZoneScoped;
         if (lua_getglobal(lua.get_lua_state(), "ModRef") == LUA_TNIL)
         {
             lua.throw_error("[get_mod_ref] Tried retrieving 'ModRef' global variable but it was nil, please do not override this global");
@@ -107,6 +109,7 @@ namespace RC
 
     static auto lua_unreal_script_function_hook_pre(Unreal::UnrealScriptFunctionCallableContext context, void* custom_data) -> void
     {
+        ZoneScoped;
         TIME_FUNCTION()
 
         // Fetch the data corresponding to this UFunction
@@ -206,6 +209,7 @@ namespace RC
 
     static auto lua_unreal_script_function_hook_post(Unreal::UnrealScriptFunctionCallableContext context, void* custom_data) -> void
     {
+        ZoneScoped;
         // Fetch the data corresponding to this UFunction
         auto& lua_data = *static_cast<LuaUnrealScriptFunctionData*>(custom_data);
 
@@ -258,6 +262,7 @@ namespace RC
 
     static auto register_input_globals(const LuaMadeSimple::Lua& lua) -> void
     {
+        ZoneScoped;
         LuaMadeSimple::Lua::Table key_table = lua.prepare_new_table();
         key_table.add_pair("LEFT_MOUSE_BUTTON", 0x1);
         key_table.add_pair("RIGHT_MOUSE_BUTTON", 0x2);
@@ -441,6 +446,7 @@ namespace RC
 
     static auto register_object_flags(const LuaMadeSimple::Lua& lua) -> void
     {
+        ZoneScoped;
         LuaMadeSimple::Lua::Table object_flags_table = lua.prepare_new_table();
         object_flags_table.add_pair("RF_NoFlags", static_cast<std::underlying_type_t<Unreal::EObjectFlags>>(Unreal::EObjectFlags::RF_NoFlags));
         object_flags_table.add_pair("RF_Public", static_cast<std::underlying_type_t<Unreal::EObjectFlags>>(Unreal::EObjectFlags::RF_Public));
@@ -491,6 +497,7 @@ namespace RC
 
     static auto regrister_efindname(const LuaMadeSimple::Lua& lua) -> void
     {
+        ZoneScoped;
         LuaMadeSimple::Lua::Table efindname_table = lua.prepare_new_table();
         efindname_table.add_pair("FNAME_Find", static_cast<std::underlying_type_t<Unreal::EFindName>>(Unreal::EFindName::FNAME_Find));
         efindname_table.add_pair("FNAME_Add", static_cast<std::underlying_type_t<Unreal::EFindName>>(Unreal::EFindName::FNAME_Add));
@@ -500,6 +507,7 @@ namespace RC
 
     LuaMod::LuaMod(UE4SSProgram& program, std::wstring&& mod_name, std::wstring&& mod_path) : Mod(program, std::move(mod_name), std::move(mod_path)), m_lua(LuaMadeSimple::new_state())
     {
+        ZoneScoped;
         // Verify that there's a 'Scripts' directory
         // Give the full path to the 'Scripts' directory to the mod container
         m_scripts_path = m_mod_path + L"\\scripts";
@@ -514,6 +522,7 @@ namespace RC
 
     auto LuaMod::global_uninstall() -> void
     {
+        ZoneScoped;
         LuaMod::m_static_construct_object_lua_callbacks.clear();
         LuaMod::m_process_console_exec_pre_callbacks.clear();
         LuaMod::m_process_console_exec_post_callbacks.clear();
@@ -535,6 +544,7 @@ namespace RC
     template<typename PropertyType>
     auto add_property_type_table(const LuaMadeSimple::Lua& lua, LuaMadeSimple::Lua::Table& property_types_table, std::string_view property_type_name) -> void
     {
+        ZoneScoped;
         property_types_table.add_key(property_type_name.data());
 
         auto property_type_table = lua.prepare_new_table();
@@ -568,6 +578,7 @@ namespace RC
     //auto static make_hook_state(Mod* mod, const LuaMadeSimple::Lua& lua)->std::shared_ptr<LuaMadeSimple::Lua>
     auto static make_hook_state(LuaMod* mod) -> LuaMadeSimple::Lua*
     {
+        ZoneScoped;
         //if (!mod->m_hook_lua)
         //{
             return mod->m_hook_lua.emplace_back(&mod->lua().new_thread());
@@ -594,6 +605,7 @@ namespace RC
 
     auto static make_async_state(LuaMod* mod, const LuaMadeSimple::Lua& lua) -> void
     {
+        ZoneScoped;
         if (!mod->m_async_lua)
         {
             mod->m_async_lua = &lua.new_thread();
@@ -620,6 +632,7 @@ namespace RC
 
     auto static make_main_state(LuaMod* mod, const LuaMadeSimple::Lua& lua) -> void
     {
+        ZoneScoped;
         if (!mod->m_main_lua)
         {
             mod->m_main_lua = &lua.new_thread();
@@ -645,6 +658,7 @@ namespace RC
     }
     auto static register_all_property_types(const LuaMadeSimple::Lua& lua) -> void
     {
+        ZoneScoped;
         auto property_types_table = lua.prepare_new_table();
 
         add_property_type_table<Unreal::FObjectProperty>(lua, property_types_table, "ObjectProperty");
@@ -678,6 +692,7 @@ namespace RC
 
     auto LuaMod::setup_lua_require_paths(const LuaMadeSimple::Lua& lua) const -> void
     {
+        ZoneScoped;
         auto* lua_state = m_lua.get_lua_state();
         lua_getglobal(lua_state, "package");
         
@@ -703,6 +718,7 @@ namespace RC
 
     auto static setup_lua_global_functions_internal(const LuaMadeSimple::Lua& lua, Mod::IsTrueMod is_true_mod) -> void
     {
+        ZoneScoped;
         lua.register_function("print", LuaLibrary::global_print);
 
         lua.register_function("StaticFindObject", [](const LuaMadeSimple::Lua& lua) -> int {
@@ -3498,6 +3514,7 @@ Overloads:
 
         // RegisterProcessConsoleExecPreHook
         Unreal::Hook::RegisterProcessConsoleExecGlobalPreCallback([](Unreal::UObject* context, const TCHAR* cmd, Unreal::FOutputDevice& ar, Unreal::UObject* executor) -> std::pair<bool, bool> {
+            ZoneScoped;
             return TRY([&] {
                 auto command = File::StringViewType{cmd};
                 auto command_parts = explode_by_occurrence(cmd, ' ');
@@ -3553,6 +3570,7 @@ Overloads:
 
         // RegisterProcessConsoleExecPostHook
         Unreal::Hook::RegisterProcessConsoleExecGlobalPostCallback([](Unreal::UObject* context, const TCHAR* cmd, Unreal::FOutputDevice& ar, Unreal::UObject* executor) -> std::pair<bool, bool> {
+            ZoneScoped;
             return TRY([&] {
                 auto command = File::StringViewType{cmd};
                 auto command_parts = explode_by_occurrence(cmd, ' ');
@@ -3608,6 +3626,7 @@ Overloads:
 
         // RegisterConsoleCommandHandler
         Unreal::Hook::RegisterProcessConsoleExecCallback([](Unreal::UObject* context, const TCHAR* cmd, Unreal::FOutputDevice& ar, Unreal::UObject* executor) -> bool {
+            ZoneScoped;
             (void)executor;
 
             if (!Unreal::Cast<Unreal::UGameViewportClient>(context)) { return false; }
@@ -3669,6 +3688,7 @@ Overloads:
 
         // RegisterConsoleCommandGlobalHandler
         Unreal::Hook::RegisterProcessConsoleExecCallback([](Unreal::UObject* context, const TCHAR* cmd, Unreal::FOutputDevice& ar, Unreal::UObject* executor) -> bool {
+            ZoneScoped;
             (void)context;
             (void)executor;
 
@@ -3742,6 +3762,7 @@ Overloads:
 
     auto LuaMod::update_async() -> void
     {
+        ZoneScoped;
         for (m_processing_events = true; m_processing_events && !m_async_thread.get_stop_token().stop_requested();)
         {
             if (m_pause_events_processing) { continue; }
@@ -3754,6 +3775,7 @@ Overloads:
 
     auto LuaMod::process_delayed_actions() -> void
     {
+        ZoneScoped;
         auto now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
 
         actions_lock();
@@ -3801,6 +3823,7 @@ Overloads:
 
     auto LuaMod::clear_delayed_actions() -> void
     {
+        ZoneScoped;
         actions_lock();
         m_pending_actions.clear();
         m_delayed_actions.clear();

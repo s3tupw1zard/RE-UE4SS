@@ -2,6 +2,7 @@
 
 #include <Windows.h>
 
+
 #ifdef TEXT
 #undef TEXT
 #endif
@@ -12,6 +13,8 @@
 #include <algorithm>
 #include <fstream>
 #include <format>
+
+#include <Tracy.hpp>
 
 #include <UE4SSProgram.hpp>
 #include <build_number.hpp>
@@ -129,6 +132,7 @@ namespace RC
 
     UE4SSProgram::UE4SSProgram(const std::wstring& moduleFilePath, std::initializer_list<BinaryOptions> options) : MProgram(options)
     {
+        FrameMarkNamed("UE4SSProgram");
         TIME_FUNCTION()
 
         s_program = this;
@@ -250,6 +254,7 @@ namespace RC
 
     UE4SSProgram::~UE4SSProgram()
     {
+        ZoneScoped;
         // Shut down the event loop
         m_processing_events = false;
 
@@ -261,6 +266,7 @@ namespace RC
 
     auto UE4SSProgram::setup_paths(const std::wstring& moduleFilePathString) -> void
     {
+        ZoneScoped;
         const std::filesystem::path moduleFilePath = std::filesystem::path(moduleFilePathString);
         m_root_directory = moduleFilePath.parent_path().wstring();
         m_module_file_path = moduleFilePath.wstring();
@@ -306,6 +312,7 @@ namespace RC
 
     auto UE4SSProgram::create_emergency_console_for_early_error(File::StringViewType error_message) -> void
     {
+        ZoneScoped;
         settings_manager.Debug.SimpleConsoleEnabled = true;
         create_simple_console();
         printf_s("%S\n", error_message.data());
@@ -313,6 +320,7 @@ namespace RC
 
     auto UE4SSProgram::setup_mod_directory_path() -> void
     {
+        ZoneScoped;
         // Mods folder path, typically '<m_working_directory>\Mods'
         // Can be customized via UE4SS-settings.ini
         if (settings_manager.Overrides.ModsFolderPath.empty())
@@ -327,6 +335,7 @@ namespace RC
 
     auto UE4SSProgram::create_simple_console() -> void
     {
+        ZoneScoped;
         if (settings_manager.Debug.SimpleConsoleEnabled)
         {
             m_debug_console_device = &Output::set_default_devices<Output::DebugConsoleDevice>();
@@ -350,6 +359,7 @@ namespace RC
 
     auto UE4SSProgram::load_unreal_offsets_from_file() -> void
     {
+        ZoneScoped;
         std::filesystem::path file_path = m_working_directory / "MemberVariableLayout.ini";
         if (std::filesystem::exists(file_path))
         {
@@ -368,6 +378,7 @@ namespace RC
 
     auto UE4SSProgram::setup_unreal() -> void
     {
+        ZoneScoped;
         // Retrieve offsets from the config file
         const std::wstring offset_overrides_section{L"OffsetOverrides"};
 
@@ -637,6 +648,7 @@ namespace RC
 
     auto UE4SSProgram::share_lua_functions() -> void
     {
+        ZoneScoped;
         m_shared_functions.set_script_variable_int32_function = &LuaLibrary::set_script_variable_int32;
         m_shared_functions.set_script_variable_default_data_function = &LuaLibrary::set_script_variable_default_data;
         m_shared_functions.call_script_function_function = &LuaLibrary::call_script_function;
@@ -646,6 +658,7 @@ namespace RC
 
     auto UE4SSProgram::on_program_start() -> void
     {
+        ZoneScoped;
         using namespace Unreal;
 
         // Commented out because this system (turn off hotkeys when in-game console is open) it doesn't work properly.
@@ -727,6 +740,7 @@ namespace RC
 
     auto UE4SSProgram::update() -> void
     {
+        ZoneScoped;
         on_program_start();
 
         Output::send(STR("Event loop start\n"));
@@ -786,6 +800,7 @@ namespace RC
 
     auto UE4SSProgram::setup_unreal_properties() -> void
     {
+        ZoneScoped;
         LuaType::StaticState::m_property_value_pushers.emplace(FName(L"ObjectProperty").GetComparisonIndex(), &LuaType::push_objectproperty);
         LuaType::StaticState::m_property_value_pushers.emplace(FName(L"ClassProperty").GetComparisonIndex(), &LuaType::push_classproperty);
         LuaType::StaticState::m_property_value_pushers.emplace(FName(L"Int8Property").GetComparisonIndex(), &LuaType::push_int8property);
@@ -812,6 +827,7 @@ namespace RC
 
     auto UE4SSProgram::setup_mods() -> void
     {
+        ZoneScoped;
         Output::send(STR("Setting up mods...\n"));
 
         if (!std::filesystem::exists(m_mods_directory)) { set_error("Mods directory doesn't exist, please create it: <%S>", m_mods_directory.c_str()); }
@@ -886,16 +902,19 @@ namespace RC
 
     auto UE4SSProgram::install_cpp_mods() -> void
     {
+        ZoneScoped;
         install_mods<CppMod>(m_mods);
     }
 
     auto UE4SSProgram::install_lua_mods() -> void
     {
+        ZoneScoped;
         install_mods<LuaMod>(m_mods);
     }
     
     auto UE4SSProgram::fire_unreal_init_for_cpp_mods() -> void
     {
+        ZoneScoped;
         for (const auto& mod : m_mods)
         {
             if (!dynamic_cast<CppMod*>(mod.get())) { continue; }
@@ -905,6 +924,7 @@ namespace RC
 
     auto UE4SSProgram::fire_program_start_for_cpp_mods() -> void
     {
+        ZoneScoped;
         for (const auto& mod : m_mods)
         {
             if (!dynamic_cast<CppMod*>(mod.get())) { continue; }
@@ -993,18 +1013,21 @@ namespace RC
 
     auto UE4SSProgram::start_lua_mods() -> void
     {
+        ZoneScoped;
         auto error_message = start_mods<LuaMod>();
         if (!error_message.empty()) { set_error(error_message.c_str()); }
     }
 
     auto UE4SSProgram::start_cpp_mods() -> void
     {
+        ZoneScoped;
         auto error_message = start_mods<CppMod>();
         if (!error_message.empty()) { set_error(error_message.c_str()); }
     }
 
     auto UE4SSProgram::uninstall_mods() -> void
     {
+        ZoneScoped;
         for (auto& mod : m_mods)
         {
             // Remove any actions, or we'll get an internal error as the lua ref won't be valid
@@ -1017,6 +1040,7 @@ namespace RC
 
     auto UE4SSProgram::reinstall_mods() -> void
     {
+        ZoneScoped;
         Output::send(STR("Re-installing all mods\n"));
 
         // Stop processing events while stuff isn't properly setup
@@ -1080,6 +1104,7 @@ namespace RC
 
     auto UE4SSProgram::generate_uht_compatible_headers() -> void
     {
+        ZoneScoped;
         Output::send(STR("Generating UHT compatible headers...\n"));
 
         double generator_duration{};
@@ -1096,6 +1121,7 @@ namespace RC
 
     auto UE4SSProgram::generate_cxx_headers(const std::filesystem::path& output_dir) -> void
     {
+        ZoneScoped;
         if (settings_manager.CXXHeaderGenerator.LoadAllAssetsBeforeGeneratingCXXHeaders)
         {
             Output::send(STR("Loading all assets...\n"));
@@ -1123,6 +1149,7 @@ namespace RC
 
     auto UE4SSProgram::generate_lua_types(const std::filesystem::path& output_dir) -> void
     {
+        ZoneScoped;
         if (settings_manager.CXXHeaderGenerator.LoadAllAssetsBeforeGeneratingCXXHeaders)
         {
             Output::send(STR("Loading all assets...\n"));
@@ -1150,6 +1177,7 @@ namespace RC
 
     auto UE4SSProgram::stop_render_thread() -> void
     {
+        ZoneScoped;
         if (m_render_thread.joinable())
         {
             m_render_thread.request_stop();
@@ -1159,16 +1187,19 @@ namespace RC
 
     auto UE4SSProgram::add_gui_tab(std::shared_ptr<GUI::GUITab> tab) -> void
     {
+        ZoneScoped;
         m_debugging_gui.add_tab(tab);
     }
 
     auto UE4SSProgram::remove_gui_tab(std::shared_ptr<GUI::GUITab> tab) -> void
     {
+        ZoneScoped;
         m_debugging_gui.remove_tab(tab);
     }
 
     auto UE4SSProgram::queue_event(EventCallable callable, void* data) -> void
     {
+        ZoneScoped;
         if (!can_process_events()) { return; }
         std::lock_guard<std::mutex> guard(m_event_queue_mutex);
         m_queued_events.emplace_back(Event{callable, data});
@@ -1176,32 +1207,38 @@ namespace RC
 
     auto UE4SSProgram::is_queue_empty() -> bool
     {
+        ZoneScoped;
         // Not locking here because if the worst that could happen as far as I know is that the event loop processes the event slightly late.
         return m_queued_events.empty();
     }
 
     auto UE4SSProgram::register_keydown_event(Input::Key key, const Input::EventCallbackCallable& callback, uint8_t custom_data) -> void
     {
+        ZoneScoped;
         m_input_handler.register_keydown_event(key, callback, custom_data);
     }
 
     auto UE4SSProgram::register_keydown_event(Input::Key key, const Input::Handler::ModifierKeyArray& modifier_keys, const Input::EventCallbackCallable& callback, uint8_t custom_data) -> void
     {
+        ZoneScoped;
         m_input_handler.register_keydown_event(key, modifier_keys, callback, custom_data);
     }
 
     auto UE4SSProgram::is_keydown_event_registered(Input::Key key) -> bool
     {
+        ZoneScoped;
         return m_input_handler.is_keydown_event_registered(key);
     }
 
     auto UE4SSProgram::is_keydown_event_registered(Input::Key key, const Input::Handler::ModifierKeyArray& modifier_keys) -> bool
     {
+        ZoneScoped;
         return m_input_handler.is_keydown_event_registered(key, modifier_keys);
     }
 
     auto UE4SSProgram::find_mod_by_name(std::wstring_view mod_name, IsInstalled is_installed, IsStarted is_started) -> Mod*
     {
+        ZoneScoped;
         auto mod_exists_with_name = std::find_if(m_mods.begin(), m_mods.end(), [&](auto& elem) -> bool {
             bool found = true;
 
@@ -1246,6 +1283,7 @@ namespace RC
 
     auto UE4SSProgram::dump_all_objects_and_properties(const File::StringType& output_path_and_file_name) -> void
     {
+        ZoneScoped;
         /*
         Output::send(STR("Test msg with no fmt args, and no optional arg\n"));
         Output::send(STR("Test msg with no fmt args, and one optional arg [Normal]\n"), LogLevel::Normal);

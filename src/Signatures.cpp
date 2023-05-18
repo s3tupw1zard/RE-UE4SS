@@ -4,6 +4,7 @@
 #include <DynamicOutput/DynamicOutput.hpp>
 #include <LuaMadeSimple/LuaMadeSimple.hpp>
 #include <LuaLibrary.hpp>
+#include <Tracy.hpp>
 #include <Unreal/UnrealInitializer.hpp>
 #include <Unreal/Signatures.hpp>
 #include <Unreal/UObject.hpp>
@@ -17,6 +18,7 @@ namespace RC
 
     auto scan_from_lua_script(std::wstring& script_file_path_and_name, std::vector<SignatureContainer>& signature_containers, LuaScriptMatchFoundFunc& match_found_func, LuaScriptScanCompleteFunc& scan_complete_func) -> void
     {
+        ZoneScoped;
         const LuaMadeSimple::Lua& lua = LuaMadeSimple::new_state();
 
         lua.open_all_libs();
@@ -89,6 +91,7 @@ namespace RC
 
     auto setup_lua_scan_overrides(std::filesystem::path& working_directory, Unreal::UnrealInitializer::Config& config) -> void
     {
+        ZoneScoped;
         std::wstring lua_guobjectarray_scan_script = working_directory / "UE4SS_Signatures/GUObjectArray.lua";
         if (std::filesystem::exists(lua_guobjectarray_scan_script))
         {

@@ -8,12 +8,14 @@
 #include <UE4SSProgram.hpp>
 
 #include <imgui_internal.h>
+#include <Tracy.hpp>
 
 namespace RC::GUI
 {
     // Wrapper for CalcTextSizeA.
     auto CalcTextSize(const char* text, float max_width, const char** remaining = nullptr) -> ImVec2
     {
+        ZoneScoped;
         ImGuiContext& g = *GImGui;
         ImFont* font = g.Font;
         const float font_size = g.FontSize;
@@ -24,6 +26,7 @@ namespace RC::GUI
 
     auto Console::GetLanguageDefinitionNone() -> const TextEditor::LanguageDefinition&
     {
+        ZoneScoped;
         static bool inited = false;
         static TextEditor::LanguageDefinition langDef;
         if (!inited)
@@ -36,6 +39,7 @@ namespace RC::GUI
 
     auto Console::GetPalette() const -> const TextEditor::Palette&
     {
+        ZoneScoped;
         const static TextEditor::Palette p = { {
                 ImGui::ColorConvertFloat4ToU32(ImVec4{0.800f, 0.800f, 0.800f, 1.0f}),	// Default
                 0xffd69c56,	// Keyword
@@ -64,6 +68,7 @@ namespace RC::GUI
 
     auto Console::render() -> void
     {
+        ZoneScoped;
         /*
         auto max_line_width = m_current_console_output_width - 10.0f;
         std::string console_buffer{};
@@ -140,12 +145,14 @@ namespace RC::GUI
 
     auto Console::render_search_box() -> void
     {
+        ZoneScoped;
         m_filter.Draw("Search log", 200);
     }
 
 
     static auto LogLevel_to_ImColor(Color::Color color) -> std::pair<ImColor, ImColor>
     {
+        ZoneScoped;
         switch (color)
         {
             case Color::Default:
@@ -171,6 +178,7 @@ namespace RC::GUI
 
     auto Console::add_line(const std::string& line, Color::Color color) -> void
     {
+        ZoneScoped;
         std::lock_guard<std::mutex> guard(m_lines_mutex);
         if (m_text_editor.GetTotalLines() < 0)
         {
@@ -188,6 +196,7 @@ namespace RC::GUI
 
     auto Console::add_line(const std::wstring& line, Color::Color color) -> void
     {
+        ZoneScoped;
         auto ansi_string = to_string(line);
         std::lock_guard<std::mutex> guard(m_lines_mutex);
         if (m_text_editor.GetTotalLines() < 0)

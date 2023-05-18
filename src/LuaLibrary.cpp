@@ -2,6 +2,7 @@
 
 #include <Helpers/Casting.hpp>
 #include <LuaLibrary.hpp>
+#include <Tracy.hpp>
 #include <LuaMadeSimple/LuaMadeSimple.hpp>
 #include <DynamicOutput/DynamicOutput.hpp>
 #include <Helpers/String.hpp>
@@ -13,6 +14,7 @@ namespace RC::LuaLibrary
 {
     auto get_outputdevice_ref(const LuaMadeSimple::Lua& lua) -> const Unreal::FOutputDevice*
     {
+        ZoneScoped;
         if (lua_getglobal(lua.get_lua_state(), "OutputDeviceRef") == LUA_TNIL)
         {
             lua.discard_value(-1);
@@ -25,12 +27,14 @@ namespace RC::LuaLibrary
 
     auto set_outputdevice_ref(const LuaMadeSimple::Lua& lua, Unreal::FOutputDevice* output_device) -> void
     {
+        ZoneScoped;
         lua_pushlightuserdata(lua.get_lua_state(), output_device);
         lua_setglobal(lua.get_lua_state(), "OutputDeviceRef");
     }
 
     auto global_print(const LuaMadeSimple::Lua& lua) -> int
     {
+        ZoneScoped;
         int32_t stack_size = lua.get_stack_size();
 
         if (stack_size <= 0)
@@ -68,6 +72,7 @@ namespace RC::LuaLibrary
 
     auto deref_to_int32(const LuaMadeSimple::Lua& lua) -> int
     {
+        ZoneScoped;
         if (lua.get_stack_size() != 1 || !lua.is_integer())
         {
             Output::send(STR("[Fatal] Lua function 'DerefToInt32' must have only 1 parameter and it must be of type 'int'.\n"));
@@ -91,6 +96,7 @@ namespace RC::LuaLibrary
 
     static auto error_handler_for_exported_functions(std::string_view e) -> void
     {
+        ZoneScoped;
         // If the output system errored out then use printf_s as a fallback
         // Logging will only happen to the debug console but it's something at least
         if (!Output::has_internal_error())
@@ -105,6 +111,7 @@ namespace RC::LuaLibrary
 
     static auto exported_function_status_to_string(ExportedFunctionStatus status) -> std::wstring_view
     {
+        ZoneScoped;
         switch (status)
         {
             case ExportedFunctionStatus::NO_ERROR_TO_EXPORT:
@@ -132,6 +139,7 @@ namespace RC::LuaLibrary
 
     auto get_lua_state_by_mod_name(const char* mod_name) -> lua_State*
     {
+        ZoneScoped;
         auto* mod = UE4SSProgram::find_lua_mod_by_name(mod_name);
         if (!mod) { return nullptr; }
         return mod->lua().get_lua_state();
@@ -139,6 +147,7 @@ namespace RC::LuaLibrary
 
     auto execute_lua_in_mod(const char* mod_name, const char* script, char* output_buffer) -> const char*
     {
+        ZoneScoped;
         std::string_view output_buffer_view{output_buffer};
 
         auto* mod = UE4SSProgram::find_lua_mod_by_name(mod_name);
@@ -173,6 +182,7 @@ namespace RC::LuaLibrary
 
     auto set_script_variable_int32(const char* mod_name, const char* variable_name, int32_t new_value, ReturnValue& return_struct) -> void
     {
+        ZoneScoped;
         try
         {
             if (!Unreal::UnrealInitializer::StaticStorage::bIsInitialized)
@@ -226,6 +236,7 @@ namespace RC::LuaLibrary
 
     auto set_script_variable_default_data([[maybe_unused]]const char* mod_name, [[maybe_unused]]const char* variable_name, [[maybe_unused]]DefaultDataStruct& external_data, ReturnValue& return_struct) -> void
     {
+        ZoneScoped;
         try
         {
             if (!Unreal::UnrealInitializer::StaticStorage::bIsInitialized)
@@ -333,6 +344,7 @@ namespace RC::LuaLibrary
 
     auto call_script_function(const char* mod_name, const char* function_name, ReturnValue& return_struct, ScriptFuncReturnValue& script_return_struct) -> void
     {
+        ZoneScoped;
         try
         {
             if (!Unreal::UnrealInitializer::StaticStorage::bIsInitialized)

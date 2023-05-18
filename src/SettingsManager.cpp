@@ -1,4 +1,5 @@
 #include <SettingsManager.hpp>
+#include <Tracy.hpp>
 #include <IniParser/Ini.hpp>
 #include <Helpers/String.hpp>
 
@@ -34,6 +35,7 @@ namespace RC
 {
     auto SettingsManager::deserialize(std::filesystem::path& file_name) -> void
     {
+        ZoneScoped;
         auto file = File::open(file_name, File::OpenFor::Reading, File::OverwriteExistingFile::No, File::CreateIfNonExistent::Yes);
         Ini::Parser parser;
         parser.parse(file);

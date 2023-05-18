@@ -30,6 +30,7 @@
 #include <imgui.h>
 #include <misc/cpp/imgui_stdlib.h>
 #include <imgui_internal.h>
+#include <Tracy.hpp>
 
 namespace RC::GUI
 {
@@ -63,6 +64,7 @@ namespace RC::GUI
 
     static auto attempt_to_add_search_result(UObject* object) -> void
     {
+        ZoneScoped;
         // TODO: Stop using the 'HashObject' function when needing the address of an FFieldClassVariant because it's not designed to return an address.
         //       Maybe make the ToFieldClass/ToUClass functions public (append 'Unsafe' to the function names).
         if (LiveView::s_need_to_filter_out_properties && object->IsA(std::bit_cast<UClass*>(FProperty::StaticClass().HashObject())))
@@ -121,6 +123,7 @@ namespace RC::GUI
 
     static auto remove_search_result(UObject* object) -> void
     {
+        ZoneScoped;
         LiveView::s_name_search_results.erase(std::remove_if(LiveView::s_name_search_results.begin(), LiveView::s_name_search_results.end(), [&](const auto& item) {
             return item == object;
         }), LiveView::s_name_search_results.end());
@@ -207,6 +210,7 @@ namespace RC::GUI
 
     static auto add_watch(const LiveView::WatchIdentifier& watch_id, UObject* object, FProperty* property) -> LiveView::Watch&
     {
+        ZoneScoped;
         auto& watch = LiveView::s_watches.emplace_back(LiveView::Watch{
                 object->GetOuterPrivate()->GetName() + STR(".") + object->GetName(),
                 property->GetName()
@@ -326,6 +330,7 @@ namespace RC::GUI
 
     auto LiveView::set_listeners() -> void
     {
+        ZoneScoped;
         if (m_listeners_set || !are_listeners_allowed()) { return; }
         m_listeners_set = true;
         UObjectArray::AddUObjectCreateListener(&FLiveViewCreateListener::LiveViewCreateListener);
@@ -334,6 +339,7 @@ namespace RC::GUI
 
     auto LiveView::unset_listeners() -> void
     {
+        ZoneScoped;
         if (!m_listeners_set || !are_listeners_allowed()) { return; }
         m_listeners_set = false;
         UObjectArray::RemoveUObjectCreateListener(&FLiveViewCreateListener::LiveViewCreateListener);
@@ -352,6 +358,7 @@ namespace RC::GUI
 
     auto LiveView::initialize() -> void
     {
+        ZoneScoped;
         s_need_to_filter_out_properties = Version::IsBelow(4, 25);
         if (UE4SSProgram::settings_manager.Debug.LiveViewObjectsPerGroup > std::numeric_limits<int>::max())
         {
@@ -483,6 +490,7 @@ namespace RC::GUI
 
     LiveView::LiveView()
     {
+        ZoneScoped;
         m_search_by_name_buffer = new char[m_search_buffer_capacity];
         strncpy_s(m_search_by_name_buffer, m_default_search_buffer.size() + sizeof(char), m_default_search_buffer.data(), m_default_search_buffer.size() + sizeof(char));
     }
@@ -505,6 +513,7 @@ namespace RC::GUI
 
     auto LiveView::guobjectarray_iterator(int32_t int_data_1, int32_t int_data_2, const std::function<void(UObject*)>& callable) -> void
     {
+        ZoneScoped;
         UObjectGlobals::ForEachUObjectInRange(int_data_1, int_data_2, [&](UObject* object, ...) {
             // TODO: Stop using the 'HashObject' function when needing the address of an FFieldClassVariant because it's not designed to return an address.
             //       Maybe make the ToFieldClass/ToUClass functions public (append 'Unsafe' to the function names).
@@ -519,6 +528,7 @@ namespace RC::GUI
 
     auto LiveView::select_object(size_t index, const FUObjectItem* object_item, UObject* object, AffectsHistory affects_history) -> void
     {
+        ZoneScoped;
         if (object_item && object && affects_history == AffectsHistory::Yes)
         {
             s_object_view_history.resize(s_currently_selected_object_index + 1);
@@ -535,6 +545,7 @@ namespace RC::GUI
 
     auto LiveView::select_property(size_t index, FProperty* property, AffectsHistory affects_history) -> void
     {
+        ZoneScoped;
         s_object_view_history.resize(s_currently_selected_object_index + 1);
         auto object_or_property = ObjectOrProperty{};
         object_or_property.is_object = false;
@@ -546,6 +557,7 @@ namespace RC::GUI
 
     static auto get_object_full_name(const UObject* object) -> const char*
     {
+        ZoneScoped;
         if (!UnrealInitializer::StaticStorage::bIsInitialized) { return ""; }
         std::lock_guard lock{s_object_ptr_to_full_name_mutex};
         if (auto it = s_object_ptr_to_full_name.find(object); it != s_object_ptr_to_full_name.end())
@@ -560,6 +572,7 @@ namespace RC::GUI
 
     static auto get_object_full_name_cxx_string(UObject* object) -> std::string
     {
+        ZoneScoped;
         if (!UnrealInitializer::StaticStorage::bIsInitialized) { return ""; }
         std::lock_guard lock{s_object_ptr_to_full_name_mutex};
         if (auto it = s_object_ptr_to_full_name.find(object); it != s_object_ptr_to_full_name.end())
@@ -574,6 +587,7 @@ namespace RC::GUI
 
     auto LiveView::guobjectarray_by_name_iterator([[maybe_unused]]int32_t int_data_1, [[maybe_unused]]int32_t int_data_2, const std::function<void(UObject*)>& callable) -> void
     {
+        ZoneScoped;
         for (const auto& object : s_name_search_results)
         {
             callable(object);
@@ -582,6 +596,7 @@ namespace RC::GUI
 
     auto LiveView::search_by_name() -> void
     {
+        ZoneScoped;
         Output::send(STR("Searching by name...\n"));
         s_name_search_results.clear();
         s_name_search_results_set.clear();
@@ -593,6 +608,7 @@ namespace RC::GUI
 
     static auto collapse_all_except(int except_id) -> void
     {
+        ZoneScoped;
         for (int i = 0; i < UObjectArray::GetNumChunks(); ++i)
         {
             if (i + s_chunk_id_start == except_id) { continue; }
@@ -602,6 +618,7 @@ namespace RC::GUI
 
     auto LiveView::collapse_all_except(void* except_id) -> void
     {
+        ZoneScoped;
         // We don't need to do anything if we only have one node open.
         if (m_opened_tree_nodes.size() == 1) { return; }
 
@@ -621,6 +638,7 @@ namespace RC::GUI
 
     auto LiveView::render_object_sub_tree_hierarchy(UObject* object) -> void
     {
+        ZoneScoped;
         if (!object) { return; }
 
         auto uclass = object->GetClassPrivate();
@@ -630,6 +648,7 @@ namespace RC::GUI
 
     auto LiveView::render_struct_sub_tree_hierarchy(UStruct* ustruct) -> void
     {
+        ZoneScoped;
         if (!ustruct) { return; }
 
         auto next_class = ustruct->GetClassPrivate();
@@ -690,6 +709,7 @@ namespace RC::GUI
 
     auto LiveView::render_class(UClass* uclass) -> void
     {
+        ZoneScoped;
         if (!uclass) { return; }
         ImGui::Text("ClassPrivate");
         if (ImGui::TreeNode(get_object_full_name(uclass)))
@@ -724,6 +744,7 @@ namespace RC::GUI
 
     auto LiveView::render_super_struct(UStruct* ustruct) -> void
     {
+        ZoneScoped;
         if (!ustruct) { return; }
         ImGui::Text("SuperStruct");
         if (ImGui::TreeNode(get_object_full_name(ustruct)))
@@ -747,23 +768,27 @@ namespace RC::GUI
 
     auto LiveView::get_selected_object_or_property() -> const ObjectOrProperty&
     {
+        ZoneScoped;
         return s_object_view_history[s_currently_selected_object_index];
     }
 
     auto LiveView::get_selected_object(size_t index, UseIndex use_index) -> std::pair<const FUObjectItem*, UObject*>
     {
+        ZoneScoped;
         const auto& selected_object_or_property = s_object_view_history[use_index == UseIndex::Yes ? index : s_currently_selected_object_index];
         return std::pair{selected_object_or_property.object_item, selected_object_or_property.object};
     }
 
     auto LiveView::get_selected_property(size_t index, UseIndex use_index) -> FProperty*
     {
+        ZoneScoped;
         const auto& selected_object_or_property = s_object_view_history[use_index == UseIndex::Yes ? index : s_currently_selected_object_index];
         return selected_object_or_property.property;
     }
 
     auto LiveView::render_property_value(FProperty* property, ContainerType container_type, void* container, FProperty** last_property_in, bool* tried_to_open_nullptr_object, bool is_watchable, int32 first_offset, bool container_is_array) -> std::variant<std::monostate, UObject*, FProperty*>
     {
+        ZoneScoped;
         std::variant<std::monostate, UObject*, FProperty*> next_item_to_render{};
         auto property_offset = property->GetOffset_Internal();
 
@@ -798,6 +823,7 @@ namespace RC::GUI
         bool open_edit_value_popup{};
 
         auto render_property_value_context_menu = [&](std::string_view id_override = "") {
+            ZoneScoped;
             if (ImGui::BeginPopupContextItem(id_override.empty() ? property_name.c_str() : std::format("context-menu-{}", id_override).c_str()))
             {
                 if (ImGui::MenuItem("Copy name"))
@@ -1021,6 +1047,7 @@ namespace RC::GUI
 
     auto LiveView::render_properties() -> void
     {
+        ZoneScoped;
         const auto currently_selected_object = get_selected_object();
         if (!currently_selected_object.first || !currently_selected_object.second) { return; }
 
@@ -1115,6 +1142,7 @@ namespace RC::GUI
 
     auto is_player_controlled(UObject* object) -> bool
     {
+        ZoneScoped;
         static auto IsPlayerControlled = [](UObject* pawn) -> bool {
             static auto function = UObjectGlobals::StaticFindObject<UFunction*>(nullptr, nullptr, STR("/Script/Engine.Pawn:IsPlayerControlled"));
             if (!function) { return false; }
@@ -1150,6 +1178,7 @@ namespace RC::GUI
 
     auto LiveView::render_info_panel_as_object(const FUObjectItem* object_item, UObject* object) -> void
     {
+        ZoneScoped;
         if (!object || (!object_item || object_item->IsUnreachable()))
         {
             ImGui::Text("No object selected.");

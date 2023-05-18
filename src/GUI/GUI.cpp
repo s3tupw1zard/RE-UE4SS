@@ -17,6 +17,8 @@
 #endif
 
 #include <imgui.h>
+#include <Tracy.hpp>
+
 #include "Roboto.hpp"
 
 namespace RC::GUI
@@ -53,6 +55,7 @@ namespace RC::GUI
 
     auto DebuggingGUI::on_update() -> void
     {
+        ZoneScoped;
         static bool show_window = true;
         static bool is_console_open = true;
 
@@ -171,6 +174,7 @@ namespace RC::GUI
 
     static auto gui_setup_style() -> void
     {
+        ZoneScoped;
         ImGui::StyleColorsDark();
         //ImGui::GetIO().FontGlobalScale = 2.0f;
         // prefer to reload font + rebuild ImFontAtlas + call style.ScaleAllSizes().
@@ -182,6 +186,7 @@ namespace RC::GUI
 
     auto DebuggingGUI::main_loop_internal() -> void
     {
+        ZoneScoped;
         if (!is_valid()) { return; }
 
         m_is_open = true;
@@ -263,11 +268,13 @@ namespace RC::GUI
 
     auto DebuggingGUI::execute_at_end_of_frame(EndOfFrameCallback callback) -> void
     {
+        ZoneScoped;
         s_end_of_frame_callbacks.emplace_back(callback);
     }
 
     auto DebuggingGUI::setup(std::stop_token&& stop_token) -> void
     {
+        ZoneScoped;
         if (!is_valid()) { return; }
         m_thread_stop_token = stop_token;
 
@@ -301,6 +308,7 @@ namespace RC::GUI
 
     auto DebuggingGUI::set_gfx_backend(GfxBackend backend) -> void
     {
+        ZoneScoped;
         switch (backend)
         {
             case GfxBackend::DX11:
@@ -321,17 +329,20 @@ namespace RC::GUI
 
     auto DebuggingGUI::add_tab(std::shared_ptr<GUITab> tab) -> void
     {
+        ZoneScoped;
         std::lock_guard<std::mutex> guard(m_tabs_mutex);
         m_tabs.push_back(tab);
     }
     auto DebuggingGUI::remove_tab(std::shared_ptr<GUITab> tab) -> void
     {
+        ZoneScoped;
         std::lock_guard<std::mutex> guard(m_tabs_mutex);
         m_tabs.erase(std::remove(m_tabs.begin(), m_tabs.end(), tab), m_tabs.end());
     }
 
     DebuggingGUI::~DebuggingGUI()
     {
+        ZoneScoped;
         UE4SSProgram::get_program().stop_render_thread();
     }
 
