@@ -1354,6 +1354,11 @@ namespace RC
         return m_module_file_path.c_str();
     }
 
+    auto UE4SSProgram::get_game_executable_directory() -> File::StringViewType
+    {
+        return m_game_executable_directory.c_str();
+    }
+
     auto UE4SSProgram::get_working_directory() -> File::StringViewType
     {
         return m_working_directory.c_str();

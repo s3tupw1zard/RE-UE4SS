@@ -212,6 +212,7 @@ namespace RC
         auto reinstall_mods() -> void;
         auto get_object_dumper_output_directory() -> const File::StringType;
         RC_UE4SS_API auto get_module_directory() -> File::StringViewType;
+        RC_UE4SS_API auto get_game_executable_directory() -> File::StringViewType;
         RC_UE4SS_API auto get_working_directory() -> File::StringViewType;
         RC_UE4SS_API auto get_mods_directory() -> File::StringViewType;
         RC_UE4SS_API auto generate_uht_compatible_headers() -> void;
