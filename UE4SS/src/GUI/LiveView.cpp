@@ -344,7 +344,7 @@ namespace RC::GUI
         }
 
         auto json_file =
-                File::open(StringType{UE4SSProgram::get_program().get_working_directory()} + std::format(STR("\\UE4SS-config\\liveview\\filters.meta.json")),
+                File::open(StringType{UE4SSProgram::get_program().get_working_directory()} + std::format(STR("\\ue4ss\\liveview\\filters.meta.json")),
                            File::OpenFor::Writing,
                            File::OverwriteExistingFile::Yes,
                            File::CreateIfNonExistent::Yes);
@@ -393,7 +393,7 @@ namespace RC::GUI
     static auto internal_load_filters_from_disk() -> void
     {
         const auto json_file =
-                File::open(StringType{UE4SSProgram::get_program().get_working_directory()} + std::format(STR("\\UE4SS-config\\liveview\\filters.meta.json")),
+                File::open(StringType{UE4SSProgram::get_program().get_working_directory()} + std::format(STR("\\ue4ss\\liveview\\filters.meta.json")),
                            File::OpenFor::Reading,
                            File::OverwriteExistingFile::No,
                            File::CreateIfNonExistent::Yes);
@@ -3267,7 +3267,7 @@ namespace RC::GUI
                 if (ImGui::IsItemHovered())
                 {
                     ImGui::BeginTooltip();
-                    ImGui::Text("Saves your filters to <UE4SS install location>/UE4SS-config/liveview/filters.meta.json");
+                    ImGui::Text("Saves your filters to <UE4SS install location>/ue4ss/liveview/filters.meta.json");
                     ImGui::EndTooltip();
                 }
 
