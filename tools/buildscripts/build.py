@@ -160,14 +160,27 @@ def package(args):
                 if file.lower() == "dwmapi.dll":
                     dwmapi_dll_path = os.path.join(root, file)
 
-        # main dll
-        shutil.copy(ue4ss_dll_path, staging_dir)
+        # Create the ue4ss folder in staging_dir
+        ue4ss_dir = os.path.join(staging_dir, 'ue4ss')
+        os.makedirs(ue4ss_dir, exist_ok=True)
+
+        # Move all files from assets folder to the ue4ss folder except dwmapi.dll
+        for root, dirs, files in os.walk('assets'):
+            for file in files:
+                if file.lower() != 'dwmapi.dll':
+                    src_path = os.path.join(root, file)
+                    dst_path = os.path.join(ue4ss_dir, os.path.relpath(src_path, 'assets'))
+                    os.makedirs(os.path.dirname(dst_path), exist_ok=True)
+                    shutil.copy(src_path, dst_path)
+
+        # main dll and pdb
+        shutil.copy(ue4ss_dll_path, ue4ss_dir)
 
         # proxy
         shutil.copy(dwmapi_dll_path, staging_dir)
 
         if is_dev_release:
-            shutil.copy(ue4ss_pdb_path, staging_dir)
+            shutil.copy(ue4ss_pdb_path, ue4ss_dir)
             if os.path.exists(os.path.join(staging_dir, 'docs')):
                 shutil.copytree('docs', os.path.join(staging_dir, 'docs'))
 
@@ -176,26 +189,27 @@ def package(args):
         print(f'created package {output}.zip')
 
         # clean up
-        for bin in ['ue4ss.dll', 'dwmapi.dll', 'ue4ss.pdb']:
-            try:
-                os.remove(os.path.join(staging_dir, bin))
-            except:
-                pass
+        try:
+            os.remove(os.path.join(ue4ss_dir, 'ue4ss.dll'))
+            os.remove(os.path.join(ue4ss_dir, 'ue4ss.pdb'))
+            os.remove(os.path.join(staging_dir, 'dwmapi.dll'))
+        except:
+            pass
 
         shutil.rmtree(os.path.join(staging_dir, 'docs'), ignore_errors=True)
+        shutil.rmtree(ue4ss_dir, ignore_errors=True)
 
-
-    make_staging_dirs();
+    make_staging_dirs()
 
     # Package UE4SS Standard
-    package_release(is_dev_release = False)
-    package_release(is_dev_release = True)
+    package_release(is_dev_release=False)
+    package_release(is_dev_release=True)
 
     # CustomGameConfigs
-    shutil.make_archive(os.path.join(release_output, 'zCustomGameConfigs'), 'zip', 'assets/CustomGameConfigs')
+    shutil.make_archive(os.path.join(release_output, 'zCustomGameConfigs'), 'zip', 'assets/CustomGameConfigs', 'ue4ss/')
 
     # MapGenBP
-    shutil.make_archive(os.path.join(release_output, 'zMapGenBP'), 'zip', 'assets/MapGenBP')
+    shutil.make_archive(os.path.join(release_output, 'zMapGenBP'), 'zip', 'assets/MapGenBP', 'ue4ss/')
 
     changelog = parse_changelog()
     with open(os.path.join(release_output, 'release_notes.md'), 'w') as file:
