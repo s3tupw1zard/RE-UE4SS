@@ -1369,6 +1369,11 @@ namespace RC
         return m_mods_directory.c_str();
     }
 
+    auto UE4SSProgram::get_legacy_root_directory() -> File::StringViewType
+    {
+        return m_legacy_root_directory.c_str();
+    }
+
     auto UE4SSProgram::generate_uht_compatible_headers() -> void
     {
         ProfilerScope();
