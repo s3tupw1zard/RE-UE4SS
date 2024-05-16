@@ -187,10 +187,12 @@ int _tmain(int argc, TCHAR* argv[])
     cpp_file << "}" << endl;
     cpp_file << endl;
 
-    cpp_file << "HMODULE load_ue4ss_dll()" << endl;
+    cpp_file << "HMODULE load_ue4ss_dll(HMODULE moduleHandle)" << endl;
     cpp_file << "{" << endl;
     cpp_file << "    HMODULE hModule = nullptr;" << endl;
-    cpp_file << "    const fs::path currentPath = fs::current_path();" << endl;
+    cpp_file << "    wchar_t moduleFilenameBuffer[1024]{'\\0'};" << endl;
+    cpp_file << "    GetModuleFileNameW(moduleHandle, moduleFilenameBuffer, sizeof(moduleFilenameBuffer) / sizeof(wchar_t));" << endl;
+    cpp_file << "    const auto currentPath = std::filesystem::path(moduleFilenameBuffer).parent_path();" << endl;
     cpp_file << "    const fs::path ue4ssPath = currentPath / \"ue4ss\" / \"UE4SS.dll\";" << endl;
     cpp_file << endl;
 
@@ -237,7 +239,7 @@ int _tmain(int argc, TCHAR* argv[])
     cpp_file << "    if (fdwReason == DLL_PROCESS_ATTACH)" << endl;
     cpp_file << "    {" << endl;
     cpp_file << "        load_original_dll();" << endl;
-    cpp_file << "        HMODULE hUE4SSDll = load_ue4ss_dll();" << endl;
+    cpp_file << "        HMODULE hUE4SSDll = load_ue4ss_dll(hInstDll);" << endl;
     cpp_file << "        if (hUE4SSDll)" << endl;
     cpp_file << "        {" << endl;
     cpp_file << "            setup_functions();" << endl;
