@@ -382,6 +382,9 @@ namespace RC::GUI
         ImGuiIO& io = ImGui::GetIO();
         (void)io;
 
+        const std::string ini_filename = to_string(UE4SSProgram::get_program().get_working_directory()) + "\\imgui.ini";
+        io.IniFilename = ini_filename.c_str();
+
         gui_setup_style();
         io.Fonts->Clear();
 
