@@ -7,14 +7,14 @@ import subprocess
 import argparse
 from datetime import datetime
 
-# change dir to repo root
+# Change dir to repo root
 os.chdir(os.path.join(os.path.dirname(__file__), '..', '..'))
 
-# outputs to github env if present
+# Outputs to GitHub env if present
 def github_output(name, value):
     if 'GITHUB_OUTPUT' in os.environ:
         with open(os.environ['GITHUB_OUTPUT'], 'a') as env:
-            env.write(f'{name}={value}')
+            env.write(f'{name}={value}\n')
 
 changelog_path = 'assets/Changelog.md'
 
@@ -67,10 +67,9 @@ def package(args):
     staging_release = os.path.join(release_output, 'StagingRelease')
 
     def make_staging_dirs():
-        # builds a release version of /assets by copying the directory and then
+        # Builds a release version of /assets by copying the directory and then
         # removing and disabling dev-only settings and files
         exclude_files = [
-            'API.txt',
             'Mods/shared/Types.lua',
             'UE4SS_Signatures',
             'VTableLayoutTemplates',
@@ -92,15 +91,15 @@ def package(args):
             'LineTraceMod': 0,
         }
 
-        # copy whole directory
+        # Copy whole directory
         shutil.copytree('assets', staging_dev)
         shutil.copytree('assets', staging_release)
 
-        # include repo README
+        # Include repo README
         shutil.copy('README.md', os.path.join(staging_dev, 'README.md'))
         shutil.copy('README.md', os.path.join(staging_release, 'README.md'))
 
-        # remove files
+        # Remove files
         for file in exclude_files:
             path = os.path.join(staging_release, file)
             try:
@@ -108,7 +107,7 @@ def package(args):
             except:
                 shutil.rmtree(path)
 
-        # change UE4SS-settings.ini
+        # Change UE4SS-settings.ini
         config_path = os.path.join(staging_release, 'UE4SS-settings.ini')
 
         with open(config_path, mode='r', encoding='utf-8-sig') as file:
@@ -121,7 +120,7 @@ def package(args):
         with open(config_path, mode='w', encoding='utf-8-sig') as file:
             file.write(content)
 
-        # change Mods/mods.txt
+        # Change Mods/mods.txt
         mods_path = os.path.join(staging_release, 'Mods/mods.txt')
 
         with open(mods_path, mode='r', encoding='utf-8-sig') as file:
@@ -165,7 +164,7 @@ def package(args):
         os.makedirs(ue4ss_dir, exist_ok=True)
 
         # Move all files from assets folder to the ue4ss folder except dwmapi.dll
-        for root, dirs, files in os.walk('assets'):
+        for root, _, files in os.walk('assets'):
             for file in files:
                 if file.lower() != 'dwmapi.dll':
                     src_path = os.path.join(root, file)
@@ -173,31 +172,29 @@ def package(args):
                     os.makedirs(os.path.dirname(dst_path), exist_ok=True)
                     shutil.copy(src_path, dst_path)
 
-        # main dll and pdb
+        # Main dll and pdb
         shutil.copy(ue4ss_dll_path, ue4ss_dir)
 
-        # proxy
+        # Proxy
         shutil.copy(dwmapi_dll_path, staging_dir)
 
         if is_dev_release:
             shutil.copy(ue4ss_pdb_path, ue4ss_dir)
-            if os.path.exists(os.path.join(staging_dir, 'docs')):
-                shutil.copytree('docs', os.path.join(staging_dir, 'docs'))
+            if os.path.exists(os.path.join(scan_start_dir, 'docs')):
+                shutil.copytree('docs', os.path.join(ue4ss_dir, 'Docs'))
+
+        # Move remaining files to the ue4ss dir
+        dont_move = ['dwmapi.dll', 'docs', 'ue4ss']
+        for file in os.listdir(staging_dir):
+            if file.lower() not in dont_move:
+                shutil.move(os.path.join(staging_dir, file), os.path.join(ue4ss_dir, file))
 
         output = os.path.join(release_output, main_zip_name)
         shutil.make_archive(output, 'zip', staging_dir)
-        print(f'created package {output}.zip')
+        print(f'Created package {output}.zip')
 
-        # clean up
-        try:
-            os.remove(os.path.join(ue4ss_dir, 'ue4ss.dll'))
-            os.remove(os.path.join(ue4ss_dir, 'ue4ss.pdb'))
-            os.remove(os.path.join(staging_dir, 'dwmapi.dll'))
-        except:
-            pass
-
-        shutil.rmtree(os.path.join(staging_dir, 'docs'), ignore_errors=True)
-        shutil.rmtree(ue4ss_dir, ignore_errors=True)
+        # Clean up staging dir
+        shutil.rmtree(staging_dir)
 
     make_staging_dirs()
 
@@ -206,16 +203,16 @@ def package(args):
     package_release(is_dev_release=True)
 
     # CustomGameConfigs
-    shutil.make_archive(os.path.join(release_output, 'zCustomGameConfigs'), 'zip', 'assets/CustomGameConfigs', 'ue4ss/')
+    shutil.make_archive(os.path.join(release_output, 'zCustomGameConfigs'), 'zip', 'assets/CustomGameConfigs')
 
     # MapGenBP
-    shutil.make_archive(os.path.join(release_output, 'zMapGenBP'), 'zip', 'assets/MapGenBP', 'ue4ss/')
+    shutil.make_archive(os.path.join(release_output, 'zMapGenBP'), 'zip', 'assets/MapGenBP')
 
     changelog = parse_changelog()
     with open(os.path.join(release_output, 'release_notes.md'), 'w') as file:
         file.write(changelog[0]['notes'])
 
-    print('done')
+    print('Done')
 
 commands = {f.__name__: f for f in [
     get_release_notes,
@@ -223,13 +220,19 @@ commands = {f.__name__: f for f in [
     release_commit,
 ]}
 
-parser = argparse.ArgumentParser()
-subparsers = parser.add_subparsers(dest='command', required=True)
-package_parser = subparsers.add_parser('package')
-package_parser.add_argument('-e', action='store_true')
-package_parser.add_argument('-d', action='store')
-release_commit_parser = subparsers.add_parser('release_commit')
-release_commit_parser.add_argument('username', nargs='?')
-args = parser.parse_args()
+def main():
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(dest='command', required=True)
+    
+    package_parser = subparsers.add_parser('package')
+    package_parser.add_argument('-e', action='store_true')
+    package_parser.add_argument('-d', action='store')
+    
+    release_commit_parser = subparsers.add_parser('release_commit')
+    release_commit_parser.add_argument('username', nargs='?')
+    
+    args = parser.parse_args()
+    commands[args.command](args)
 
-commands[args.command](args)
+if __name__ == "__main__":
+    main()

@@ -585,22 +585,10 @@ namespace RC::GUI
         auto legacy_root_directory_path = StringType{UE4SSProgram::get_program().get_legacy_root_directory()} + std::format(STR("\\watches\\watches.meta.json"));
     
         StringType json_file_contents;
-        bool file_opened = false;
+        bool is_legacy = !std::filesystem::exists(working_directory_path) && std::filesystem::exists(legacy_root_directory_path);
+        auto json_file = File::open(is_legacy ? legacy_root_directory_path : working_directory_path, File::OpenFor::Reading, File::OverwriteExistingFile::No, File::CreateIfNonExistent::Yes);
         
-        if (std::filesystem::exists(working_directory_path))
-        {
-            auto json_file = File::open(working_directory_path, File::OpenFor::Reading, File::OverwriteExistingFile::No, File::CreateIfNonExistent::Yes);
-            json_file_contents = json_file.read_all();
-            file_opened = true;
-        }
-        else if (std::filesystem::exists(legacy_root_directory_path))
-        {
-            auto json_file = File::open(legacy_root_directory_path, File::OpenFor::Reading, File::OverwriteExistingFile::No, File::CreateIfNonExistent::Yes);
-            json_file_contents = json_file.read_all();
-            file_opened = true;
-        }
-        
-        if (!file_opened || json_file_contents.empty())
+        if (json_file_contents.empty())
         {
             return;
         }

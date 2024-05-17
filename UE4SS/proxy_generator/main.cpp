@@ -145,6 +145,8 @@ int _tmain(int argc, TCHAR* argv[])
     cpp_file << "#include <Windows.h>" << endl;
     cpp_file << "#include <filesystem>" << endl;
     cpp_file << endl;
+    cpp_file << "#pragma comment(lib, \"user32.lib\")" << endl;
+    cpp_file << endl;
 
     cpp_file << "using namespace RC;" << endl;
     cpp_file << "namespace fs = std::filesystem;" << endl;
@@ -176,6 +178,7 @@ int _tmain(int argc, TCHAR* argv[])
     cpp_file << "    SOriginalDll = LoadLibrary(dll_path.c_str());" << endl;
     cpp_file << "    if (!SOriginalDll)" << endl;
     cpp_file << "    {" << endl;
+    cpp_file << "        MessageBox(nullptr, STR(\"Failed to load proxy DLL\"), STR(\"UE4SS Error\"), MB_OK | MB_ICONERROR);" << endl;
     cpp_file << "        ExitProcess(0);" << endl;
     cpp_file << "    }" << endl;
     cpp_file << "}" << endl;
@@ -246,6 +249,7 @@ int _tmain(int argc, TCHAR* argv[])
     cpp_file << "        }" << endl;
     cpp_file << "        else" << endl;
     cpp_file << "        {" << endl;
+    cpp_file << "            MessageBox(nullptr, STR(\"Failed to load UE4SS.dll. Please see the docs on correct installation: https://docs.ue4ss.com/installation-guide\"), STR(\"UE4SS Error\"), MB_OK | MB_ICONERROR);" << endl;
     cpp_file << "            ExitProcess(0);" << endl;
     cpp_file << "        }" << endl;
     cpp_file << "    }" << endl;
